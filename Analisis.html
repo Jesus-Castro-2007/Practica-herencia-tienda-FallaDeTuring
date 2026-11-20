@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hoja de Análisis Metodológico - Ejercicio 14 (UCLA DCyT)</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 12mm;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    body {
+      background-color: #f8fafc;
+      color: #0f172a;
+      margin: 0;
+      padding: 16px;
+      font-size: 11.5px;
+      line-height: 1.35;
+    }
+    .page-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 24px 28px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 2px solid #1e3a8a;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #1e3a8a;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .subtitle {
+      font-size: 10.5px;
+      color: #475569;
+      margin: 2px 0 0 0;
+    }
+    h2 {
+      font-size: 12px;
+      background-color: #1e3a8a;
+      color: #ffffff;
+      padding: 4px 8px;
+      margin: 10px 0 6px 0;
+      border-radius: 3px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #cbd5e1;
+      padding: 4px 6px;
+      text-align: left;
+      font-size: 10.5px;
+    }
+    table.data-table th {
+      background-color: #f1f5f9;
+      color: #1e293b;
+      font-weight: 600;
+    }
+    .highlight {
+      background-color: #eff6ff;
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 1px 5px;
+      font-size: 9.5px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+    .badge-base { background: #e0e7ff; color: #3730a3; }
+    .badge-sub { background: #dcfce7; color: #166534; }
+    .badge-mayor { background: #fef3c7; color: #92400e; }
+    .code-pill {
+      font-family: Consolas, monospace;
+      background: #f1f5f9;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #0f172a;
+    }
+    .uml-box {
+      border: 1px solid #94a3b8;
+      border-radius: 4px;
+      padding: 6px;
+      background: #fafafa;
+      font-family: Consolas, monospace;
+      font-size: 10px;
+      line-height: 1.25;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .col-50 {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <!-- ENCABEZADO OFICIAL UCLA -->
+    <table class="header-table">
+      <tr>
+        <td>
+          <div class="title">Universidad Centroccidental "Lisandro Alvarado"</div>
+          <div class="subtitle">Decanato de Ciencias y Tecnología • Coordinación del Eje Curricular de Programación</div>
+          <div class="subtitle"><strong>Programación I (3154) / Programación (C4) — Corte II: Herencia en POO con MVC</strong></div>
+        </td>
+        <td style="text-align: right; vertical-align: top;">
+          <span style="font-size: 12px; font-weight: bold; color: #1e3a8a;">ANÁLISIS METODOLÓGICO</span><br />
+          <span style="font-size: 10px; color: #64748b;">Ejercicio 14: Tienda Streetwear</span>
+        </td>
+      </tr>
+    </table>
+
+    <!-- 1. ENUNCIADO Y DESCRIPCIÓN DEL DOMINIO -->
+    <h2>1. Planteamiento del Problema & Requerimientos</h2>
+    <p style="margin: 0 0 6px 0;">
+      En una tienda streetwear (<code class="code-pill">mStore</code>) se procesan artículos vendidos (<code class="code-pill">mPrenda</code>: código, marca, costo), aplicando un margen base del 30% (<code class="code-pill">precioInicial = costo * 1.30</code>). Se especializan dos líneas:
+      <strong>Sneakers Edición Limitada</strong> (<code class="code-pill">mSneaker</code>: +$15 tasa importación, +10% sobre subtotal si alta demanda, y <strong>Nuevo Requerimiento</strong>: atributo <code class="code-pill">tallaUs</code> y cálculo de <code class="code-pill">menorTallaSneaker()</code> en la mayor) y 
+      <strong>Hoodie / Sudadera</strong> (<code class="code-pill">mHoodie</code>: +$8 si estampado, -$6 si colección pasada). Determinar precio final, ganancia neta por producto (<code class="code-pill">precioFinal - costo</code>), ganancia total de la tienda y código de producto con mayor ganancia neta.
+    </p>
+
+    <!-- 2. JERARQUÍA DE CLASES Y MODELADO POO -->
+    <h2>2. Arquitectura de Clases y Jerarquía de Herencia (Sin Arreglos)</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Clase</th>
+          <th>Rol en MVC</th>
+          <th>Relación POO</th>
+          <th>Responsabilidad Principal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="code-pill">mPrenda</code></td>
+          <td><span class="badge badge-base">Clase Menor Base</span></td>
+          <td>Superclase</td>
+          <td>Generaliza atributos comunes (código, marca, costo), valida datos y calcula precio inicial base (costo + 30%).</td>
+        </tr>
+        <tr>
+          <td><code class="code-pill">mSneaker</code></td>
+          <td><span class="badge badge-sub">Clase Menor Hija</span></td>
+          <td>Especialización (<code class="code-pill">extends mPrenda</code>)</td>
+          <td>Hereda atributos base, añade <code class="code-pill">esAltaDemanda</code> y <code class="code-pill">tallaUs</code>, sobreescribe <code class="code-pill">calcularPrecioFinal()</code> sumando $15 tasa e incremento 10%.</td>
+        </tr>
+        <tr>
+          <td><code class="code-pill">mHoodie</code></td>
+          <td><span class="badge badge-sub">Clase Menor Hija</span></td>
+          <td>Especialización (<code class="code-pill">extends mPrenda</code>)</td>
+          <td>Hereda atributos base, añade <code class="code-pill">conEstampado</code> y <code class="code-pill">esColeccionPasada</code>, sobreescribe <code class="code-pill">calcularPrecioFinal()</code> (+ $8 / - $6).</td>
+        </tr>
+        <tr>
+          <td><code class="code-pill">mStore</code></td>
+          <td><span class="badge badge-mayor">Clase Mayor</span></td>
+          <td>Acumulador / Polimorfismo</td>
+          <td>Procesa flujo continuo de prendas (<code class="code-pill">procesarPrenda(p: mPrenda)</code>), acumula ganancia total, récord mayor ganancia y menor talla de sneakers.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- 3. TABLA DE ATRIBUTOS Y MÉTODOS -->
+    <h2>3. Diccionario de Datos y Métodos (Modificadores de Acceso)</h2>
+    <div class="row">
+      <div class="col-50">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Identificador</th>
+              <th>Tipo</th>
+              <th>Visib.</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="code-pill">mPrenda._codigo</code></td>
+              <td>string</td>
+              <td># protected</td>
+              <td>Código identificador del producto.</td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mPrenda._marca</code></td>
+              <td>string</td>
+              <td># protected</td>
+              <td>Marca comercial (Nike, Adidas, etc.).</td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mPrenda._costo</code></td>
+              <td>number</td>
+              <td># protected</td>
+              <td>Costo de adquisición monetario.</td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mSneaker._esAltaDemanda</code></td>
+              <td>boolean</td>
+              <td>- private</td>
+              <td>Indica si aplica el recargo del 10%.</td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mSneaker._tallaUs</code></td>
+              <td>number</td>
+              <td>- private</td>
+              <td>Talla numérica vendida (Nuevo Requerimiento).</td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mHoodie._conEstampado</code></td>
+              <td>boolean</td>
+              <td>- private</td>
+              <td>Indica si suma $8 de estampado.</td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mHoodie._esColeccionPasada</code></td>
+              <td>boolean</td>
+              <td>- private</td>
+              <td>Indica si descuenta $6 por liquidación.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="col-50">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Método / Variable Control</th>
+              <th>Clase</th>
+              <th>Fórmula / Lógica C-A-M-P-P</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code class="code-pill">precioInicial(): number</code></td>
+              <td>mPrenda</td>
+              <td><code class="code-pill">costo * 1.30</code></td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">override calcularPrecioFinal()</code></td>
+              <td>mSneaker</td>
+              <td><code class="code-pill">(inicial + 15) * (altaDemanda ? 1.10 : 1.0)</code></td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">override calcularPrecioFinal()</code></td>
+              <td>mHoodie</td>
+              <td><code class="code-pill">inicial + (estamp ? 8 : 0) - (colPas ? 6 : 0)</code></td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">calcularGananciaNeta(): number</code></td>
+              <td>mPrenda</td>
+              <td><code class="code-pill">calcularPrecioFinal() - costo</code></td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">acGananciaTotal: number</code></td>
+              <td>mStore</td>
+              <td><strong>[A - Acumulador]</strong> <code class="code-pill">+= prenda.calcularGananciaNeta()</code></td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">mayorGanancia, codMayor</code></td>
+              <td>mStore</td>
+              <td><strong>[M - Mayor]</strong> Récord primera prenda o si <code class="code-pill">ganancia > mayor</code></td>
+            </tr>
+            <tr>
+              <td><code class="code-pill">minTallaSneaker(): number</code></td>
+              <td>mStore</td>
+              <td><strong>[M - Menor]</strong> Récord primer sneaker o si <code class="code-pill">talla < minTalla</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 4. CASOS DE PRUEBA Y VALIDACIÓN -->
+    <h2>4. Validación de Casos de Prueba Oficiales (Cálculo Manual vs. Salida del Sistema)</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Cód</th>
+          <th>Marca</th>
+          <th>Tipo</th>
+          <th>Costo</th>
+          <th>Atributos Específicos</th>
+          <th>Precio Inicial</th>
+          <th>Precio Final</th>
+          <th>Ganancia Neta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>S01</strong></td>
+          <td>Nike</td>
+          <td>Sneaker</td>
+          <td>$50.00</td>
+          <td>Alta Demanda: Sí | Talla US: 9.5</td>
+          <td>$50 * 1.30 = $65.00</td>
+          <td>($65 + 15) * 1.10 = <strong>$88.00</strong></td>
+          <td class="highlight">$88.00 - $50.00 = <strong>$38.00</strong></td>
+        </tr>
+        <tr>
+          <td><strong>H01</strong></td>
+          <td>Adidas</td>
+          <td>Hoodie</td>
+          <td>$20.00</td>
+          <td>Estampado: Sí | Col. Pasada: No</td>
+          <td>$20 * 1.30 = $26.00</td>
+          <td>$26 + $8 = <strong>$34.00</strong></td>
+          <td class="highlight">$34.00 - $20.00 = <strong>$14.00</strong></td>
+        </tr>
+        <tr>
+          <td><strong>S02</strong></td>
+          <td>Puma</td>
+          <td>Sneaker</td>
+          <td>$40.00</td>
+          <td>Alta Demanda: No | Talla US: 8.5</td>
+          <td>$40 * 1.30 = $52.00</td>
+          <td>$52 + 15 = <strong>$67.00</strong></td>
+          <td class="highlight">$67.00 - $40.00 = <strong>$27.00</strong></td>
+        </tr>
+        <tr>
+          <td><strong>H02</strong></td>
+          <td>Vans</td>
+          <td>Hoodie</td>
+          <td>$30.00</td>
+          <td>Estampado: No | Col. Pasada: Sí</td>
+          <td>$30 * 1.30 = $39.00</td>
+          <td>$39 - $6 = <strong>$33.00</strong></td>
+          <td class="highlight">$33.00 - $30.00 = <strong>$3.00</strong></td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr style="background-color: #f8fafc; font-weight: bold;">
+          <td colspan="7" style="text-align: right;">GANANCIA TOTAL DE LA TIENDA:</td>
+          <td class="highlight">$38.00 + $14.00 + $27.00 + $3.00 = <strong>$82.00</strong></td>
+        </tr>
+        <tr style="background-color: #f8fafc; font-weight: bold;">
+          <td colspan="7" style="text-align: right;">PRODUCTO CON MAYOR GANANCIA NETA:</td>
+          <td class="highlight"><strong>S01</strong> (con $38.00)</td>
+        </tr>
+        <tr style="background-color: #f8fafc; font-weight: bold;">
+          <td colspan="7" style="text-align: right;">MENOR TALLA DE SNEAKER REGISTRADA (Nuevo Requerimiento):</td>
+          <td class="highlight">min(9.5, 8.5) = <strong>8.5 US</strong></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div style="text-align: center; font-size: 9.5px; color: #64748b; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 6px;">
+      Eje Curricular de Programación • UCLA DCyT • Proyecto MVC en TypeScript con Herencia (Cero Any y Cero Arreglos)
+    </div>
+  </div>
+</body>
+</html>

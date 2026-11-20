@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda de Sneakers y Ropa Urbana</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input, select, button {
+      padding: 5px;
+      margin: 3px 0;
+    }
+    .caja {
+      border: 1px solid #999;
+      padding: 15px;
+      margin-bottom: 20px;
+      max-width: 480px;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 480px;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 5px 8px;
+      text-align: left;
+    }
+    pre {
+      background-color: #f4f4f4;
+      border: 1px solid #ccc;
+      padding: 10px;
+      max-width: 480px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Tienda de Sneakers y Ropa Urbana</h2>
+
+  <!-- FORMULARIO DE ENTRADA -->
+  <section class="caja">
+    <h3>Procesar Prenda</h3>
+
+    <div>
+      <label>Código:<br>
+        <input type="text" id="inCodigo" placeholder="Ej: S01, H01">
+      </label>
+    </div>
+
+    <div>
+      <label>Marca:<br>
+        <input type="text" id="inMarca" placeholder="Ej: Nike, Adidas">
+      </label>
+    </div>
+
+    <div>
+      <label>Costo ($):<br>
+        <input type="number" id="inCosto" step="0.01" placeholder="0">
+      </label>
+    </div>
+
+    <div>
+      <label>Línea de producto:<br>
+        <select id="selTipo">
+          <option value="sneaker">Sneaker</option>
+          <option value="hoodie">Hoodie</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- ESPECÍFICO DE SNEAKER -->
+    <div id="secSneaker" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
+      <div>
+        <label>Talla US:<br>
+          <input type="number" id="inTallaUs" step="0.5" placeholder="Ej: 9.5">
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="chkAltaDemanda"> ¿Talla de alta demanda? (+10%)
+        </label>
+      </div>
+    </div>
+
+    <!-- ESPECÍFICO DE HOODIE -->
+    <div id="secHoodie" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px; display: none;">
+      <div>
+        <label>
+          <input type="checkbox" id="chkEstampado"> ¿Estampado personalizado? (+$8)
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="chkColeccionPasada"> ¿Colección pasada? (-$6)
+        </label>
+      </div>
+    </div>
+
+    <br>
+    <div>
+      <button type="button" id="btnProcesar">Procesar</button>
+      <button type="button" id="btnCargarCasos">Cargar Casos de Prueba</button>
+      <button type="button" id="btnLimpiar">Reiniciar</button>
+    </div>
+
+    <div id="divMensaje" style="color: red; margin-top: 8px;"></div>
+  </section>
+
+  <!-- REPORTES Y RESULTADOS -->
+  <section class="caja">
+    <h3>Reporte General</h3>
+    <p>Ganancia total de la tienda: <strong id="lblGananciaTotal">$0.00</strong></p>
+    <p>Producto con mayor ganancia: <strong id="lblCodMayorGanancia">---</strong> <span id="lblMayorGanancia"></span></p>
+    <p>Menor talla de sneaker: <strong id="lblMenorTallaSneaker">---</strong></p>
+    <p>Total artículos procesados: <strong id="lblTotalPrendas">0</strong></p>
+
+    <h4>Detalle de artículos:</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Marca</th>
+          <th>Tipo</th>
+          <th>Precio</th>
+          <th>Ganancia</th>
+        </tr>
+      </thead>
+      <tbody id="tblReporteCuerpo"></tbody>
+    </table>
+
+    <h4>Salida solicitada (texto):</h4>
+    <pre id="txtConsolaSalida"></pre>
+  </section>
+
+  <script type="module" src="./dist/index.js"></script>
+</body>
+</html>

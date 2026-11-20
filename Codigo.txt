@@ -1,0 +1,832 @@
+==================================================
+PLANTEAMIENTO DEL EJERCICIO
+14. TIENDA DE SNEAKERS Y ROPA URBANA
+
+En el módulo de inventario y ventas de una tienda streetwear (clase mayor: mStore) se procesan los artículos vendidos (clase menor base: mPrenda), conociendo el código, la marca y el costo de adquisición, sobre el cual se calcula un precio inicial aplicando un margen base del 30%. Se comercializan dos líneas especializadas:
+- Sneakers Edición Limitada (mSneaker): al precio inicial le suma $15 de tasa de importación; si es una talla de alta demanda, incrementa un 10% adicional sobre ese subtotal.
+- Hoodie / Sudadera (mHoodie): al precio inicial le suma $8 si incluye estampado personalizado; si pertenece a una colección pasada, aplica un descuento de $6 sobre el monto resultante.
+
+Se desea determinar el precio final de venta y la ganancia neta (precioFinal - costo) de cada producto, la ganancia total obtenida por la tienda y el código del producto que generó la mayor ganancia neta.
+
+Nuevo Requerimiento:
+- Atributo en clase menor derivada (mSneaker) -> -> Cálculo de menor en clase mayor (mStore): Incluir el atributo tallaUs (real) en mSneaker para indicar la talla numérica vendida, e implementar un método menorTallaSneaker() en mStore que retorne la menor talla registrada entre los sneakers vendidos.
+
+Datos de entrada:
+- Código: S01, Marca: Nike, Costo: 50, Tipo: Sneaker, Alta demanda: Sí, Talla US: 9.5
+- Código: H01, Marca: Adidas, Costo: 20, Tipo: Hoodie, Estampado: Sí, Colección pasada: No
+- Código: S02, Marca: Puma, Costo: 40, Tipo: Sneaker, Alta demanda: No, Talla US: 8.5
+- Código: H02, Marca: Vans, Costo: 30, Tipo: Hoodie, Estampado: No, Colección pasada: Sí
+
+La salida requerida presenta el siguiente formato:
+S01 (Nike) -> Precio: $88.00 | Ganancia: $38.00
+H01 (Adidas) -> Precio: $34.00 | Ganancia: $14.00
+S02 (Puma) -> Precio: $67.00 | Ganancia: $27.00
+H02 (Vans) -> Precio: $33.00 | Ganancia: $3.00
+
+Ganancia total de la tienda: $82.00
+Producto con mayor ganancia neta: S01
+Menor talla de sneaker registrada: 8.5
+
+==================================================
+ARCHIVO: src/interfaces/IStoreView.ts
+export interface IStoreView {
+  // Getters para extracción y lectura de datos del formulario
+  get codigo(): string;
+  get marca(): string;
+  get costo(): number;
+  get tipo(): string;
+  get esAltaDemanda(): boolean;
+  get tallaUs(): number;
+  get conEstampado(): boolean;
+  get esColeccionPasada(): boolean;
+
+  // Suscripción de eventos de interfaz de usuario
+  onProcesar(callback: () => void): void;
+  onCargarCasosPrueba(callback: () => void): void;
+  onLimpiar(callback: () => void): void;
+  onCambioTipo(callback: (tipo: string) => void): void;
+
+  // Métodos de renderizado y visualización de resultados
+  reportarPrenda(codigo: string, marca: string, tipo: string, precio: number, ganancia: number): void;
+  reportarResumen(gananciaTotal: number, codigoMayorGanancia: string, mayorGanancia: number, menorTallaSneaker: number, totalPrendas: number): void;
+  mostrarMensaje(mensaje: string, tipo: "success" | "danger" | "info" | "warning"): void;
+  actualizarCamposEspecificos(tipo: string): void;
+  limpiarFormulario(): void;
+  reiniciarVista(): void;
+}
+
+==================================================
+ARCHIVO: src/models/mPrenda.ts
+export class mPrenda {
+  protected _codigo: string = "";
+  protected _marca: string = "";
+  protected _costo: number = 0;
+
+  constructor(codigo: string, marca: string, costo: number) {
+    this.codigo = codigo;
+    this.marca = marca;
+    this.costo = costo;
+  }
+
+  set codigo(valor: string) {
+    this._codigo = valor.trim();
+  }
+
+  get codigo(): string {
+    return this._codigo;
+  }
+
+  set marca(valor: string) {
+    this._marca = valor.trim();
+  }
+
+  get marca(): string {
+    return this._marca;
+  }
+
+  set costo(valor: number) {
+    this._costo = +valor; // Coerción numérica estricta
+  }
+
+  get costo(): number {
+    return this._costo;
+  }
+
+  // Margen base del 30% sobre el costo de adquisición
+  precioInicial(): number {
+    return this.costo * 1.30;
+  }
+
+  // Método base que puede ser sobreescrito por las subclases especializadas
+  calcularPrecioFinal(): number {
+    return this.precioInicial();
+  }
+
+  // Ganancia neta: precioFinal - costo
+  calcularGananciaNeta(): number {
+    return this.calcularPrecioFinal() - this.costo;
+  }
+
+  obtenerTipo(): string {
+    return "Prenda";
+  }
+}
+
+==================================================
+ARCHIVO: src/models/mSneaker.ts
+import { mPrenda } from "./mPrenda.js";
+
+export class mSneaker extends mPrenda {
+  private _esAltaDemanda: boolean = false;
+  private _tallaUs: number = 0;
+
+  constructor(
+    codigo: string,
+    marca: string,
+    costo: number,
+    esAltaDemanda: boolean,
+    tallaUs: number
+  ) {
+    super(codigo, marca, costo); // Obligatorio como primera sentencia antes de 'this'
+    this.esAltaDemanda = esAltaDemanda;
+    this.tallaUs = tallaUs;
+  }
+
+  set esAltaDemanda(valor: boolean) {
+    this._esAltaDemanda = Boolean(valor);
+  }
+
+  get esAltaDemanda(): boolean {
+    return this._esAltaDemanda;
+  }
+
+  set tallaUs(valor: number) {
+    this._tallaUs = +valor; // Coerción numérica para talla real
+  }
+
+  get tallaUs(): number {
+    return this._tallaUs;
+  }
+
+  // Sobreescritura: suma $15 de tasa de importación al precio inicial.
+  // Si es talla de alta demanda, incrementa un 10% adicional sobre ese subtotal.
+  override calcularPrecioFinal(): number {
+    const subtotal = super.precioInicial() + 15;
+    if (this.esAltaDemanda) {
+      return subtotal * 1.10;
+    }
+    return subtotal;
+  }
+
+  override obtenerTipo(): string {
+    return "Sneaker";
+  }
+}
+
+==================================================
+ARCHIVO: src/models/mHoodie.ts
+import { mPrenda } from "./mPrenda.js";
+
+export class mHoodie extends mPrenda {
+  private _conEstampado: boolean = false;
+  private _esColeccionPasada: boolean = false;
+
+  constructor(
+    codigo: string,
+    marca: string,
+    costo: number,
+    conEstampado: boolean,
+    esColeccionPasada: boolean
+  ) {
+    super(codigo, marca, costo); // Obligatorio como primera sentencia antes de 'this'
+    this.conEstampado = conEstampado;
+    this.esColeccionPasada = esColeccionPasada;
+  }
+
+  set conEstampado(valor: boolean) {
+    this._conEstampado = Boolean(valor);
+  }
+
+  get conEstampado(): boolean {
+    return this._conEstampado;
+  }
+
+  set esColeccionPasada(valor: boolean) {
+    this._esColeccionPasada = Boolean(valor);
+  }
+
+  get esColeccionPasada(): boolean {
+    return this._esColeccionPasada;
+  }
+
+  // Sobreescritura: suma $8 si incluye estampado personalizado;
+  // si pertenece a una colección pasada, aplica un descuento de $6 sobre el monto resultante.
+  override calcularPrecioFinal(): number {
+    let precio = super.precioInicial();
+    if (this.conEstampado) {
+      precio += 8;
+    }
+    if (this.esColeccionPasada) {
+      precio -= 6;
+    }
+    return precio;
+  }
+
+  override obtenerTipo(): string {
+    return "Hoodie";
+  }
+}
+
+==================================================
+ARCHIVO: src/models/mStore.ts
+import { mPrenda } from "./mPrenda.js";
+import { mSneaker } from "./mSneaker.js";
+
+export class mStore {
+  // Variables de control C-A-M-P-P (Contadores, Acumuladores, Menor/Mayor)
+  private acGananciaTotal: number = 0;
+  private cntPrendas: number = 0;
+  private mayorGanancia: number = 0;
+  private codMayorGanancia: string = "";
+  private minTallaSneaker: number = 0;
+  private cntSneakers: number = 0;
+
+  // Acepta mPrenda y cualquier subclase (mSneaker, mHoodie) por la regla "Es-un"
+  procesarPrenda(prenda: mPrenda): void {
+    const ganancia = prenda.calcularGananciaNeta();
+
+    // 1. Acumular ganancia total y contar prendas
+    this.acGananciaTotal += ganancia;
+    this.cntPrendas++;
+
+    // 2. Determinar producto con mayor ganancia neta
+    if (this.cntPrendas === 1 || ganancia > this.mayorGanancia) {
+      this.mayorGanancia = ganancia;
+      this.codMayorGanancia = prenda.codigo;
+    }
+
+    // 3. Nuevo Requerimiento: determinar la menor talla registrada entre los sneakers vendidos
+    if (prenda instanceof mSneaker) {
+      this.cntSneakers++;
+      if (this.cntSneakers === 1 || prenda.tallaUs < this.minTallaSneaker) {
+        this.minTallaSneaker = prenda.tallaUs;
+      }
+    }
+  }
+
+  gananciaTotal(): number {
+    return this.acGananciaTotal;
+  }
+
+  codigoMayorGanancia(): string {
+    return this.codMayorGanancia;
+  }
+
+  montoMayorGanancia(): number {
+    return this.mayorGanancia;
+  }
+
+  menorTallaSneaker(): number {
+    return this.minTallaSneaker;
+  }
+
+  cantidadPrendas(): number {
+    return this.cntPrendas;
+  }
+
+  cantidadSneakers(): number {
+    return this.cntSneakers;
+  }
+
+  reiniciar(): void {
+    this.acGananciaTotal = 0;
+    this.cntPrendas = 0;
+    this.mayorGanancia = 0;
+    this.codMayorGanancia = "";
+    this.minTallaSneaker = 0;
+    this.cntSneakers = 0;
+  }
+}
+
+==================================================
+ARCHIVO: src/views/vStore.ts
+import { IStoreView } from "../interfaces/IStoreView.js";
+
+export class vStore implements IStoreView {
+  private inCodigo: HTMLInputElement;
+  private inMarca: HTMLInputElement;
+  private inCosto: HTMLInputElement;
+  private selTipo: HTMLSelectElement;
+
+  private secSneaker: HTMLElement;
+  private inTallaUs: HTMLInputElement;
+  private chkAltaDemanda: HTMLInputElement;
+
+  private secHoodie: HTMLElement;
+  private chkEstampado: HTMLInputElement;
+  private chkColeccionPasada: HTMLInputElement;
+
+  private btnProcesar: HTMLButtonElement;
+  private btnCargarCasos: HTMLButtonElement;
+  private btnLimpiar: HTMLButtonElement;
+
+  private tblReporteCuerpo: HTMLElement;
+  private txtConsolaSalida: HTMLElement;
+  private lblGananciaTotal: HTMLElement;
+  private lblCodMayorGanancia: HTMLElement;
+  private lblMayorGanancia: HTMLElement;
+  private lblMenorTallaSneaker: HTMLElement;
+  private lblTotalPrendas: HTMLElement;
+  private divMensaje: HTMLElement;
+
+  constructor() {
+    this.inCodigo = document.getElementById("inCodigo") as HTMLInputElement;
+    this.inMarca = document.getElementById("inMarca") as HTMLInputElement;
+    this.inCosto = document.getElementById("inCosto") as HTMLInputElement;
+    this.selTipo = document.getElementById("selTipo") as HTMLSelectElement;
+
+    this.secSneaker = document.getElementById("secSneaker") as HTMLElement;
+    this.inTallaUs = document.getElementById("inTallaUs") as HTMLInputElement;
+    this.chkAltaDemanda = document.getElementById("chkAltaDemanda") as HTMLInputElement;
+
+    this.secHoodie = document.getElementById("secHoodie") as HTMLElement;
+    this.chkEstampado = document.getElementById("chkEstampado") as HTMLInputElement;
+    this.chkColeccionPasada = document.getElementById("chkColeccionPasada") as HTMLInputElement;
+
+    this.btnProcesar = document.getElementById("btnProcesar") as HTMLButtonElement;
+    this.btnCargarCasos = document.getElementById("btnCargarCasos") as HTMLButtonElement;
+    this.btnLimpiar = document.getElementById("btnLimpiar") as HTMLButtonElement;
+
+    this.tblReporteCuerpo = document.getElementById("tblReporteCuerpo") as HTMLElement;
+    this.txtConsolaSalida = document.getElementById("txtConsolaSalida") as HTMLElement;
+    this.lblGananciaTotal = document.getElementById("lblGananciaTotal") as HTMLElement;
+    this.lblCodMayorGanancia = document.getElementById("lblCodMayorGanancia") as HTMLElement;
+    this.lblMayorGanancia = document.getElementById("lblMayorGanancia") as HTMLElement;
+    this.lblMenorTallaSneaker = document.getElementById("lblMenorTallaSneaker") as HTMLElement;
+    this.lblTotalPrendas = document.getElementById("lblTotalPrendas") as HTMLElement;
+    this.divMensaje = document.getElementById("divMensaje") as HTMLElement;
+
+    this.actualizarCamposEspecificos(this.tipo);
+    this.selTipo.addEventListener("change", () => {
+      this.actualizarCamposEspecificos(this.tipo);
+    });
+  }
+
+  get codigo(): string {
+    return this.inCodigo.value.trim();
+  }
+
+  get marca(): string {
+    return this.inMarca.value.trim();
+  }
+
+  get costo(): number {
+    return +this.inCosto.value;
+  }
+
+  get tipo(): string {
+    return this.selTipo.value.toLowerCase();
+  }
+
+  get tallaUs(): number {
+    return +this.inTallaUs.value;
+  }
+
+  get esAltaDemanda(): boolean {
+    return this.chkAltaDemanda.checked;
+  }
+
+  get conEstampado(): boolean {
+    return this.chkEstampado.checked;
+  }
+
+  get esColeccionPasada(): boolean {
+    return this.chkColeccionPasada.checked;
+  }
+
+  onProcesar(callback: () => void): void {
+    this.btnProcesar.onclick = callback;
+  }
+
+  onCargarCasosPrueba(callback: () => void): void {
+    this.btnCargarCasos.onclick = callback;
+  }
+
+  onLimpiar(callback: () => void): void {
+    this.btnLimpiar.onclick = callback;
+  }
+
+  onCambioTipo(callback: (tipo: string) => void): void {
+    this.selTipo.onchange = () => {
+      this.actualizarCamposEspecificos(this.tipo);
+      callback(this.tipo);
+    };
+  }
+
+  actualizarCamposEspecificos(tipo: string): void {
+    if (tipo === "sneaker") {
+      this.secSneaker.style.display = "block";
+      this.secHoodie.style.display = "none";
+    } else {
+      this.secSneaker.style.display = "none";
+      this.secHoodie.style.display = "block";
+    }
+  }
+
+  reportarPrenda(
+    codigo: string,
+    marca: string,
+    tipo: string,
+    precio: number,
+    ganancia: number
+  ): void {
+    const lineaConsola = `${codigo} (${marca}) -> Precio: $${precio.toFixed(2)} | Ganancia: $${ganancia.toFixed(2)}`;
+    console.log(lineaConsola);
+
+    if (this.txtConsolaSalida) {
+      this.txtConsolaSalida.textContent += `${lineaConsola}\n`;
+    }
+
+    if (this.tblReporteCuerpo) {
+      const fila = document.createElement("tr");
+      fila.innerHTML = `
+        <td>${codigo}</td>
+        <td>${marca}</td>
+        <td>${tipo}</td>
+        <td>$${precio.toFixed(2)}</td>
+        <td>$${ganancia.toFixed(2)}</td>
+      `;
+      this.tblReporteCuerpo.appendChild(fila);
+    }
+  }
+
+  reportarResumen(
+    gananciaTotal: number,
+    codigoMayorGanancia: string,
+    mayorGanancia: number,
+    menorTallaSneaker: number,
+    totalPrendas: number
+  ): void {
+    const resumenConsola = [
+      "",
+      `Ganancia total de la tienda: $${gananciaTotal.toFixed(2)}`,
+      `Producto con mayor ganancia neta: ${codigoMayorGanancia || "N/A"}`
+    ];
+
+    if (menorTallaSneaker > 0) {
+      resumenConsola.push(`Menor talla de sneaker registrada: ${menorTallaSneaker}`);
+    }
+
+    resumenConsola.forEach((linea) => {
+      console.log(linea);
+      if (this.txtConsolaSalida && linea !== "") {
+        this.txtConsolaSalida.textContent += `${linea}\n`;
+      }
+    });
+
+    if (this.lblGananciaTotal) {
+      this.lblGananciaTotal.textContent = `$${gananciaTotal.toFixed(2)}`;
+    }
+    if (this.lblCodMayorGanancia) {
+      this.lblCodMayorGanancia.textContent = codigoMayorGanancia || "---";
+    }
+    if (this.lblMayorGanancia) {
+      this.lblMayorGanancia.textContent = mayorGanancia > 0 ? `($${mayorGanancia.toFixed(2)})` : "";
+    }
+    if (this.lblMenorTallaSneaker) {
+      this.lblMenorTallaSneaker.textContent = menorTallaSneaker > 0 ? `${menorTallaSneaker} US` : "---";
+    }
+    if (this.lblTotalPrendas) {
+      this.lblTotalPrendas.textContent = `${totalPrendas}`;
+    }
+  }
+
+  mostrarMensaje(mensaje: string, tipo: "success" | "danger" | "info" | "warning"): void {
+    if (this.divMensaje) {
+      this.divMensaje.textContent = mensaje;
+      this.divMensaje.style.display = "block";
+      setTimeout(() => {
+        if (this.divMensaje) this.divMensaje.style.display = "none";
+      }, 3000);
+    }
+  }
+
+  limpiarFormulario(): void {
+    this.inCodigo.value = "";
+    this.inMarca.value = "";
+    this.inCosto.value = "";
+    this.inTallaUs.value = "";
+    this.chkAltaDemanda.checked = false;
+    this.chkEstampado.checked = false;
+    this.chkColeccionPasada.checked = false;
+    this.inCodigo.focus();
+  }
+
+  reiniciarVista(): void {
+    this.limpiarFormulario();
+    if (this.tblReporteCuerpo) this.tblReporteCuerpo.innerHTML = "";
+    if (this.txtConsolaSalida) this.txtConsolaSalida.textContent = "";
+    if (this.lblGananciaTotal) this.lblGananciaTotal.textContent = "$0.00";
+    if (this.lblCodMayorGanancia) this.lblCodMayorGanancia.textContent = "---";
+    if (this.lblMayorGanancia) this.lblMayorGanancia.textContent = "";
+    if (this.lblMenorTallaSneaker) this.lblMenorTallaSneaker.textContent = "---";
+    if (this.lblTotalPrendas) this.lblTotalPrendas.textContent = "0";
+    if (this.divMensaje) this.divMensaje.style.display = "none";
+    console.clear();
+  }
+}
+
+==================================================
+ARCHIVO: src/controllers/cStore.ts
+import { mStore } from "../models/mStore.js";
+import { mPrenda } from "../models/mPrenda.js";
+import { mSneaker } from "../models/mSneaker.js";
+import { mHoodie } from "../models/mHoodie.js";
+import { IStoreView } from "../interfaces/IStoreView.js";
+
+export class cStore {
+  private modelo: mStore;
+  private vista: IStoreView;
+
+  // Inyección de dependencias en el constructor
+  constructor(modeloIny: mStore, vistaIny: IStoreView) {
+    this.modelo = modeloIny;
+    this.vista = vistaIny;
+  }
+
+  iniciar(): void {
+    // 1. Suscripción de eventos desde la Vista
+    this.vista.onProcesar(() => this.procesarProducto());
+    this.vista.onCargarCasosPrueba(() => this.cargarCasosPrueba());
+    this.vista.onLimpiar(() => this.reiniciar());
+
+    // 2. Ejecución automática de los datos de prueba oficiales al cargar
+    this.cargarCasosPrueba();
+  }
+
+  private procesarProducto(): void {
+    const codigo = this.vista.codigo;
+    const marca = this.vista.marca;
+    const costo = this.vista.costo;
+    const tipo = this.vista.tipo;
+
+    // Validaciones básicas de entrada
+    if (!codigo || !marca) {
+      this.vista.mostrarMensaje("Por favor, ingrese el código y la marca del producto.", "warning");
+      return;
+    }
+
+    if (isNaN(costo) || costo <= 0) {
+      this.vista.mostrarMensaje("El costo debe ser un valor numérico positivo mayor a 0.", "danger");
+      return;
+    }
+
+    let prenda: mPrenda;
+
+    if (tipo === "sneaker") {
+      const tallaUs = this.vista.tallaUs;
+      if (isNaN(tallaUs) || tallaUs <= 0) {
+        this.vista.mostrarMensaje("Por favor ingrese una talla US válida (número real mayor a 0).", "danger");
+        return;
+      }
+      prenda = new mSneaker(
+        codigo,
+        marca,
+        costo,
+        this.vista.esAltaDemanda,
+        tallaUs
+      );
+    } else {
+      prenda = new mHoodie(
+        codigo,
+        marca,
+        costo,
+        this.vista.conEstampado,
+        this.vista.esColeccionPasada
+      );
+    }
+
+    // 1. Procesar en el Modelo Mayor
+    this.modelo.procesarPrenda(prenda);
+
+    // 2. Reportar prenda individual en la Vista
+    this.vista.reportarPrenda(
+      prenda.codigo,
+      prenda.marca,
+      prenda.obtenerTipo(),
+      prenda.calcularPrecioFinal(),
+      prenda.calcularGananciaNeta()
+    );
+
+    // 3. Reporte gerencial de resumen
+    this.vista.reportarResumen(
+      this.modelo.gananciaTotal(),
+      this.modelo.codigoMayorGanancia(),
+      this.modelo.montoMayorGanancia(),
+      this.modelo.menorTallaSneaker(),
+      this.modelo.cantidadPrendas()
+    );
+
+    this.vista.limpiarFormulario();
+    this.vista.mostrarMensaje(`Artículo ${prenda.codigo} procesado correctamente.`, "success");
+  }
+
+  private cargarCasosPrueba(): void {
+    // Limpieza de estados previos
+    this.modelo.reiniciar();
+    this.vista.reiniciarVista();
+
+    // 1. Instanciamos objetos individuales (estricto: cero arreglos [])
+    // S01: Sneaker, Nike, Costo: 50, Alta demanda: Sí, Talla: 9.5
+    const prenda1 = new mSneaker("S01", "Nike", 50, true, 9.5);
+
+    // H01: Hoodie, Adidas, Costo: 20, Estampado: Sí, Colección pasada: No
+    const prenda2 = new mHoodie("H01", "Adidas", 20, true, false);
+
+    // S02: Sneaker, Puma, Costo: 40, Alta demanda: No, Talla: 8.5
+    const prenda3 = new mSneaker("S02", "Puma", 40, false, 8.5);
+
+    // H02: Hoodie, Vans, Costo: 30, Estampado: No, Colección pasada: Sí
+    const prenda4 = new mHoodie("H02", "Vans", 30, false, true);
+
+    // 2. Procesamos cada instancia en la Clase Mayor y reportamos en Vista
+    this.modelo.procesarPrenda(prenda1);
+    this.vista.reportarPrenda(
+      prenda1.codigo,
+      prenda1.marca,
+      prenda1.obtenerTipo(),
+      prenda1.calcularPrecioFinal(),
+      prenda1.calcularGananciaNeta()
+    );
+
+    this.modelo.procesarPrenda(prenda2);
+    this.vista.reportarPrenda(
+      prenda2.codigo,
+      prenda2.marca,
+      prenda2.obtenerTipo(),
+      prenda2.calcularPrecioFinal(),
+      prenda2.calcularGananciaNeta()
+    );
+
+    this.modelo.procesarPrenda(prenda3);
+    this.vista.reportarPrenda(
+      prenda3.codigo,
+      prenda3.marca,
+      prenda3.obtenerTipo(),
+      prenda3.calcularPrecioFinal(),
+      prenda3.calcularGananciaNeta()
+    );
+
+    this.modelo.procesarPrenda(prenda4);
+    this.vista.reportarPrenda(
+      prenda4.codigo,
+      prenda4.marca,
+      prenda4.obtenerTipo(),
+      prenda4.calcularPrecioFinal(),
+      prenda4.calcularGananciaNeta()
+    );
+
+    // 3. Reporte global final desde la Clase Mayor
+    this.vista.reportarResumen(
+      this.modelo.gananciaTotal(),
+      this.modelo.codigoMayorGanancia(),
+      this.modelo.montoMayorGanancia(),
+      this.modelo.menorTallaSneaker(),
+      this.modelo.cantidadPrendas()
+    );
+
+    this.vista.mostrarMensaje("Casos de prueba oficiales cargados con éxito.", "info");
+  }
+
+  private reiniciar(): void {
+    this.modelo.reiniciar();
+    this.vista.reiniciarVista();
+    this.vista.mostrarMensaje("Inventario reiniciado correctamente.", "info");
+  }
+}
+
+==================================================
+ARCHIVO: index.html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tienda de Sneakers y Ropa Urbana</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    input, select, button {
+      padding: 5px;
+      margin: 3px 0;
+    }
+    .caja {
+      border: 1px solid #999;
+      padding: 15px;
+      margin-bottom: 20px;
+      max-width: 480px;
+    }
+    table {
+      border-collapse: collapse;
+      margin-top: 10px;
+      width: 100%;
+      max-width: 480px;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 5px 8px;
+      text-align: left;
+    }
+    pre {
+      background-color: #f4f4f4;
+      border: 1px solid #ccc;
+      padding: 10px;
+      max-width: 480px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Tienda de Sneakers y Ropa Urbana</h2>
+
+  <!-- FORMULARIO DE ENTRADA -->
+  <section class="caja">
+    <h3>Procesar Prenda</h3>
+
+    <div>
+      <label>Código:<br>
+        <input type="text" id="inCodigo" placeholder="Ej: S01, H01">
+      </label>
+    </div>
+
+    <div>
+      <label>Marca:<br>
+        <input type="text" id="inMarca" placeholder="Ej: Nike, Adidas">
+      </label>
+    </div>
+
+    <div>
+      <label>Costo ($):<br>
+        <input type="number" id="inCosto" step="0.01" placeholder="0">
+      </label>
+    </div>
+
+    <div>
+      <label>Línea de producto:<br>
+        <select id="selTipo">
+          <option value="sneaker">Sneaker</option>
+          <option value="hoodie">Hoodie</option>
+        </select>
+      </label>
+    </div>
+
+    <!-- ESPECÍFICO DE SNEAKER -->
+    <div id="secSneaker" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px;">
+      <div>
+        <label>Talla US:<br>
+          <input type="number" id="inTallaUs" step="0.5" placeholder="Ej: 9.5">
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="chkAltaDemanda"> ¿Talla de alta demanda? (+10%)
+        </label>
+      </div>
+    </div>
+
+    <!-- ESPECÍFICO DE HOODIE -->
+    <div id="secHoodie" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 8px; display: none;">
+      <div>
+        <label>
+          <input type="checkbox" id="chkEstampado"> ¿Estampado personalizado? (+$8)
+        </label>
+      </div>
+      <div>
+        <label>
+          <input type="checkbox" id="chkColeccionPasada"> ¿Colección pasada? (-$6)
+        </label>
+      </div>
+    </div>
+
+    <br>
+    <div>
+      <button type="button" id="btnProcesar">Procesar</button>
+      <button type="button" id="btnCargarCasos">Cargar Casos de Prueba</button>
+      <button type="button" id="btnLimpiar">Reiniciar</button>
+    </div>
+
+    <div id="divMensaje" style="color: red; margin-top: 8px;"></div>
+  </section>
+
+  <!-- REPORTES Y RESULTADOS -->
+  <section class="caja">
+    <h3>Reporte General</h3>
+    <p>Ganancia total de la tienda: <strong id="lblGananciaTotal">$0.00</strong></p>
+    <p>Producto con mayor ganancia: <strong id="lblCodMayorGanancia">---</strong> <span id="lblMayorGanancia"></span></p>
+    <p>Menor talla de sneaker: <strong id="lblMenorTallaSneaker">---</strong></p>
+    <p>Total artículos procesados: <strong id="lblTotalPrendas">0</strong></p>
+
+    <h4>Detalle de artículos:</h4>
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Marca</th>
+          <th>Tipo</th>
+          <th>Precio</th>
+          <th>Ganancia</th>
+        </tr>
+      </thead>
+      <tbody id="tblReporteCuerpo"></tbody>
+    </table>
+
+    <h4>Salida solicitada (texto):</h4>
+    <pre id="txtConsolaSalida"></pre>
+  </section>
+
+  <script type="module" src="./dist/index.js"></script>
+</body>
+</html>
